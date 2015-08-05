@@ -8,7 +8,9 @@
 </head>
 <body>
   <header class="nav navbar-default">
-    <h2>FriendFace</h2>
+    <h2>
+      <%= link_to "FriendFace", root_path %>
+    </h2>
     <%= form_for :instagram, url: results_path do |f| %>
       <%= f.label "Search for an Instagram feed" %>
       <%= f.text_field :query %>
