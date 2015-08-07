@@ -1,11 +1,19 @@
 source 'https://rubygems.org'
 
+# for loading secrets
 gem 'dotenv-rails', groups: [:development, :test]
 
+# for authentication
 gem "omniauth"
 gem "omniauth-instagram"
 gem "omniauth-vimeo"
+
+# for styling
 gem "bootstrap-sass"
+
+# for making calls to APIs
+gem 'httparty'
+
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '4.2.3'
 # Use sqlite3 as the database for Active Record
@@ -27,8 +35,6 @@ gem 'jbuilder', '~> 2.0'
 # bundle exec rake doc:rails generates the API under doc/api.
 gem 'sdoc', '~> 0.4.0', group: :doc
 
-gem 'httparty'
-
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
@@ -39,14 +45,18 @@ gem 'httparty'
 # gem 'capistrano-rails', group: :development
 
 group :development, :test do
-  gem "better_errors" # These two are just for debugging
+  # for debugging
+  gem "better_errors"
   gem "binding_of_caller"
-  gem "rspec-rails"
   gem "pry-rails"
-  # Call 'byebug' anywhere in the code to stop execution and get a debugger console
-  gem 'byebug'
+
+  # for testing
+  gem "rspec-rails"
   gem "simplecov", require: false
   gem "factory_girl_rails"
+
+  # Call 'byebug' anywhere in the code to stop execution and get a debugger console
+  gem 'byebug'
 
   gem 'sqlite3'
   # Access an IRB console on exception pages or by using <%= console %> in views
