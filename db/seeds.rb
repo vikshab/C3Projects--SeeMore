@@ -15,25 +15,25 @@ user6 = AuUser.create(name: "trash can (seed)", uid: 99906,
 # give them some feeds to subscribe to -----------------------------------------
 # note: these are all instagram feed ids
 cheese_cake_ru_feed = Feed.create(platform_feed_id: 1184782014,
-  platform: "Developer", avatar: "/seeds/user7.png", name: "cheese_cake_ru")
+  platform: "developer", avatar: "/seeds/user7.png", name: "cheese_cake_ru")
 cheeseharris_feed = Feed.create(platform_feed_id: 538175012,
-  platform: "Developer", avatar: "/seeds/user8.png", name: "cheeseharris")
+  platform: "developer", avatar: "/seeds/user8.png", name: "cheeseharris")
 golden_egg_feed = Feed.create(platform_feed_id: 1417351781,
-  platform: "Developer", avatar: "/seeds/user9.png", name: "_golden_egg_")
+  platform: "developer", avatar: "/seeds/user9.png", name: "_golden_egg_")
 puppystagrams_feed = Feed.create(platform_feed_id: 1559136659,
-  platform: "Developer", avatar: "/seeds/user10.png", name: "puppystagrams")
+  platform: "developer", avatar: "/seeds/user10.png", name: "puppystagrams")
 cats_of_world_feed = Feed.create(platform_feed_id: 484554895,
-  platform: "Developer", avatar: "/seeds/user11.png", name: "cats_of_world")
+  platform: "developer", avatar: "/seeds/user11.png", name: "cats_of_world")
 sharksdaily_feed = Feed.create(platform_feed_id: 283281926,
-  platform: "Developer", avatar: "/seeds/user12.png", name: "sharks_daily")
+  platform: "developer", avatar: "/seeds/user12.png", name: "sharks_daily")
 hiking_trails_feed = Feed.create(platform_feed_id: 2008924933,
-  platform: "Developer", avatar: "/seeds/user1.png", name: "hiking_trails")
+  platform: "developer", avatar: "/seeds/user1.png", name: "hiking_trails")
 star_trek_feed = Feed.create(platform_feed_id: 221700878,
-  platform: "Developer", avatar: "/seeds/user2.png", name: "star_trek")
+  platform: "developer", avatar: "/seeds/user2.png", name: "star_trek")
 scandal_feed = Feed.create(platform_feed_id: 338623854,
-  platform: "Developer", avatar: "/seeds/user3.png", name: "scandal")
+  platform: "developer", avatar: "/seeds/user3.png", name: "scandal")
 jerome_boateng_feed = Feed.create(platform_feed_id: 192998906,
-  platform: "Developer", avatar: "/seeds/user4.png", name: "jerome_boateng")
+  platform: "developer", avatar: "/seeds/user4.png", name: "jerome_boateng")
 
 # subscribe most of the seed users to some of those feeds ----------------------
 user1.feeds << cheese_cake_ru_feed
