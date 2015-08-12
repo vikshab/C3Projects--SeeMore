@@ -46,6 +46,19 @@ class Feed < ActiveRecord::Base
 
   # Updating feeds -------------
 
+<<<<<<< HEAD
+=======
+  def check_for_updates
+    if platform == "Instagram" || platform == "Developer"
+      update_instagram_feed
+    elsif platform == "Vimeo"
+      update_vimeo_feed
+    else
+      update_instagram_feed
+    end
+  end
+
+>>>>>>> dda8f5b5324e34652c831a0bd323c6cc258e2305
   def update_instagram_feed
     # grab the dusty, old posts
     feed_posts = self.posts

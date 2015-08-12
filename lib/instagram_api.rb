@@ -2,7 +2,6 @@ module FriendFaceAPIs
   class InstagramAPI
     require "httparty"
 
-    # Instagram public -----------------------------------------------------------
     def self.instagram_feed(feed_id)
       feed_id = feed_id.to_s
       feed_url = self.instagram_feed_uri(feed_id)
@@ -24,8 +23,8 @@ module FriendFaceAPIs
       return results["data"]
     end
 
+
     private
-      # Instagram private --------------------------------------------------------
       def self.instagram_request(url)
         results = HTTParty.get(url)
       end

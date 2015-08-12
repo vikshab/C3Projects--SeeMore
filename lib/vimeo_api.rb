@@ -2,12 +2,10 @@ module FriendFaceAPIs
   class VimeoAPI
     require "httparty"
 
-    # Vimeo public ---------------------------------------------------------------
     def self.vimeo_feed(feed_id)
       feed_id = feed_id.to_s
       feed_url = self.vimeo_feed_uri(feed_id)
       results = self.vimeo_json_request(feed_url)
-      raise
       return results["data"]
     end
 
@@ -27,7 +25,6 @@ module FriendFaceAPIs
 
 
     private
-      # Vimeo private ------------------------------------------------------------
       def self.vimeo_json_request(url)
         json_string_results = HTTParty.get(url, :headers => vimeo_header)
         json_results = JSON.parse(json_string_results)
