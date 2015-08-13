@@ -1,29 +1,24 @@
+# require & include the API wrappers
+require "#{ Rails.root }/lib/vimeo_api"
+require "#{ Rails.root }/lib/instagram_api"
+include FriendFaceAPIs
+
 class Feed < ActiveRecord::Base
   # Callbacks ------------------------------------------------------------------
   after_create :populate_posts
 
   # Associations ---------------------------------------------------------------
   has_and_belongs_to_many :au_users
-  has_many :posts
-
-  # Feed URI constants ---------------------------------------------------------
-  # TODO: consider whether this should remain as media/recent. just realized there might be a longer feed available.
-  INSTAGRAM_BASE_URI = "https://api.instagram.com/v1/users/" # ig's user_id == our feed_id
-  INSTAGRAM_FEED_END_URI = "/media/recent?client_id=#{ ENV["INSTAGRAM_CLIENT_ID"] }"
-  VIMEO_BASE_URI = "https://api.vimeo.com/users/" # vm's user_id == our feed_id
-  VIMEO_FEED_END_URI = "/videos?page=1&per_page=30"
-  VIMEO_TOKEN_HEADER = {
-                  "Accept" => "application/vnd.vimeo.*+json;version=3.2",
-                  "Authorization" => "bearer #{ ENV["VIMEO_ACCESS_TOKEN"] }"
-                }
+  has_many :posts, dependent: :destroy
 
   # Validations-----------------------------------------------------------------
   validates :name, :platform, :platform_feed_id, presence: true
 
   # Scopes ---------------------------------------------------------------------
-  scope :developer, -> { where(platform: "developer") }
-  scope :instagram, -> { where(platform: "instagram") }
-  scope :vimeo, -> { where(platform: "vimeo") }
+  scope :developer, -> { where(platform: "Developer") }
+  scope :instagram, -> { where(platform: "Instagram") }
+  scope :vimeo, -> { where(platform: "Vimeo") }
+  scope :alphabetical, -> { order("LOWER(name) ASC") }
 
   # Instance Methods -----------------------------------------------------------
 
@@ -38,81 +33,103 @@ class Feed < ActiveRecord::Base
   end
 
   def populate_instagram_feed
-    feed_url = INSTAGRAM_BASE_URI + platform_feed_id.to_s + INSTAGRAM_FEED_END_URI
-    results = HTTParty.get(feed_url)
-    posts = results["data"]
+    posts = InstagramAPI.instagram_feed(platform_feed_id)
     posts.each do |post|
-      maybe_valid_post = Post.create(create_instagram_post(post, self.id))
+      Post.create(create_instagram_post(post, self.id))
     end
   end
 
   def populate_vimeo_feed
-    feed_url = VIMEO_BASE_URI + platform_feed_id.to_s + VIMEO_FEED_END_URI
-    json_string_results = HTTParty.get(feed_url, :headers => VIMEO_TOKEN_HEADER )
-    json_results = JSON.parse(json_string_results)
-    posts = json_results["data"]
+    posts = VimeoAPI.vimeo_feed(platform_feed_id)
     posts.each do |post|
-      maybe_valid_post = Post.create(create_vimeo_post(post, self.id))
+      Post.create(create_vimeo_post(post, self.id))
     end
   end
 
   # Updating feeds -------------
 
-  def check_for_updates
-    if platform == "instagram" || platform == "developer"
+  def update_feed # FIXME: test update_feed
+    if (platform == "Instagram") || (platform == "Developer")
       update_instagram_feed
-    elsif platform == "vimeo"
+    elsif platform == "Vimeo"
       update_vimeo_feed
-    else
-      update_instagram_feed
     end
   end
 
   def update_instagram_feed
-    # FIXME: this doesn't handle for posts that have been edited
-    # FIXME continued: it only handles for posts that have been deleted
+    # grab the dusty, old posts
     feed_posts = self.posts
     feed_post_ids = feed_posts.map { |post| post.post_id }
 
-    # query the API
-    feed_url = INSTAGRAM_FEED_URI_A + platform_feed_id.to_s + INSTAGRAM_FEED_URI_B
-    results = HTTParty.get(feed_url)
-    new_posts = results["data"]
+    # query the API to get new posts
+    new_posts = InstagramAPI.instagram_feed(platform_feed_id)
 
-    # create new posts from data
+    # create & update new posts from data where appropriate
     updated_posts = []
-    post_data.each do |post|
+    new_posts.each do |post|
       post_id = post["id"]
-      new_post = Post.create(create_instagram_post(post, self.id)) unless feed_post_ids.include? post_id
+
+      if feed_post_ids.include? post_id
+        new_post = Post.find_by(post_id: post_id)
+        new_post.update(create_instagram_post(post, self.id))
+      else
+        new_post = Post.create(create_instagram_post(post, self.id))
+      end
+
       updated_posts.push(new_post)
     end
 
     # delete any posts that are no longer present
+    feed_posts = self.posts
     feed_posts.each do |post|
-      unless updated_posts.include? post
-        post.destroy
-      end
+      post.destroy unless updated_posts.include? post
     end
   end
 
   def update_vimeo_feed
-    # query the API
-    # save any new posts
-    # update any posts that changed
-      # maybe there was a typo, etc
-    # delete any posts that stopped existing
-      # privacy-- people might change the privacy stuff
-      # deletion-- people might just delete something
+    # grab the dusty, old posts
+    feed_posts = self.posts
+    feed_post_ids = feed_posts.map { |post| post.post_id }
+
+    # query the API to get new posts
+    new_posts = VimeoAPI.vimeo_feed(platform_feed_id)
+
+    # create & update new posts from data where appropriate
+    updated_posts = []
+    new_posts.each do |post|
+      post_id = post["id"]
+      if feed_post_ids.include? post_id
+        new_post = Post.find_by(post_id: post_id)
+        new_post.update(create_vimeo_post(post, self.id))
+      else
+        new_post = Post.create(create_vimeo_post(post, self.id))
+      end
+
+      updated_posts.push(new_post)
+    end
+
+    # delete any posts that are no longer present
+    feed_posts = self.posts
+    feed_posts.each do |post|
+      post.destroy unless updated_posts.include? post
+    end
   end
 
   # Private methods ------------------------------------------------------------
   private
     def create_instagram_post(post_data, feed_id)
       post_hash = {}
+
+      # do a little extra preparation on one piece of post data
+      date_posted = Time.at(post_data["created_time"].to_i)
+
+      # now assign everything to the hash
       post_hash[:post_id]     = post_data["id"] # post id from instagram
       post_hash[:description] = post_data["caption"]["text"] if post_data["caption"]
       post_hash[:content]     = post_data["images"]["low_resolution"]["url"]
-      post_hash[:date_posted] = Time.at(post_data["created_time"].to_i)
+      post_hash[:likes]       = post_data["likes"]["count"]
+      post_hash[:name]        = post_data["nickname"]
+      post_hash[:date_posted] = date_posted
       post_hash[:feed_id]     = feed_id # feed id from local feed object
       return post_hash
     end
@@ -120,12 +137,14 @@ class Feed < ActiveRecord::Base
     def create_vimeo_post(post_data, feed_id)
       post_hash = {}
 
+      # do a little extra preparation on a couple pieces of post data
       post_id = VimeoController.helpers.grab_id(post_data)
-      post_hash[:post_id]     = post_id # post id from vimeo
-
       content = VimeoController.helpers.resize_video(post_data)
-      post_hash[:content]     = content # this is iframe video embedding code
 
+      # now assign everything to the hash
+      post_hash[:post_id]     = post_id # post id from vimeo
+      post_hash[:content]     = content # this is iframe video embedding code
+      post_hash[:likes]       = post_data["metadata"]["connections"]["likes"]["total"]
       post_hash[:name]        = post_data["name"]
       post_hash[:description] = post_data["description"] # FIXME: in description, if description nil we can just put name
       post_hash[:date_posted] = post_data["created_time"]
